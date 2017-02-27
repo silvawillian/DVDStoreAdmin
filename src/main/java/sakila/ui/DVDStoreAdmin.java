@@ -5,6 +5,15 @@
  */
 package sakila.ui;
 
+import java.util.List;
+import java.util.Vector;
+import javax.swing.table.DefaultTableModel;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import sakila.entity.Actor;
+import sakila.util.HibernateUtil;
+
 /**
  *
  * @author Willian
@@ -17,7 +26,30 @@ public class DVDStoreAdmin extends javax.swing.JFrame {
     public DVDStoreAdmin() {
         initComponents();
     }
+    
+    private static String QUERY_BASED_ON_FIRST_NAME="from Actor a where a.firstName like '";
+    private static String QUERY_BASED_ON_LAST_NAME="from Actor a where a.lastName like '";
+    
+    private void runQueryBasedOnFirstName() {
+        executeHQLQuery(QUERY_BASED_ON_FIRST_NAME + firstNameTextField.getText() + "%'");
+    }
 
+    private void runQueryBasedOnLastName() {
+        executeHQLQuery(QUERY_BASED_ON_LAST_NAME + lastNameTextField.getText() + "%'");
+    }
+    
+    private void executeHQLQuery(String hql) {
+        try {
+            Session session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            Query q = session.createQuery(hql);
+            List resultList = q.list();
+            displayResult(resultList);
+            session.getTransaction().commit();
+        } catch (HibernateException he) {
+            he.printStackTrace();
+        }
+    }
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -147,9 +179,33 @@ public class DVDStoreAdmin extends javax.swing.JFrame {
     }//GEN-LAST:event_lastNameTextFieldActionPerformed
 
     private void queryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_queryButtonActionPerformed
-        // TODO add your handling code here:
+            if(!firstNameTextField.getText().trim().equals("")) {
+                runQueryBasedOnFirstName();
+            } else if(!lastNameTextField.getText().trim().equals("")) {
+                runQueryBasedOnLastName();
+            }
     }//GEN-LAST:event_queryButtonActionPerformed
 
+    private void displayResult(List resultList) {
+    Vector<String> tableHeaders = new Vector<String>();
+    Vector tableData = new Vector();
+    tableHeaders.add("ActorId"); 
+    tableHeaders.add("FirstName");
+    tableHeaders.add("LastName");
+    tableHeaders.add("LastUpdated");
+
+    for(Object o : resultList) {
+        Actor actor = (Actor)o;
+        Vector<Object> oneRow = new Vector<Object>();
+        oneRow.add(actor.getActorId());
+        oneRow.add(actor.getFirstName());
+        oneRow.add(actor.getLastName());
+        oneRow.add(actor.getLastUpdate());
+        tableData.add(oneRow);
+    }
+        resultTable.setModel(new DefaultTableModel(tableData, tableHeaders));
+    }
+    
     /**
      * @param args the command line arguments
      */
